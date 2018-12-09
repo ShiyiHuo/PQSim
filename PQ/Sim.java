@@ -22,209 +22,272 @@ public static Event finished;
 public static int totalWait = 0;
 public static int count;
 
+/******* newly added ******/
+public static double[] outoforderRateList = new double[5];
+public static double[] packetDelayList = new double[5];
+public static double[] packetLossList = new double[5];
+
+
 public static void main(String argv[]) {
 	TotalDelay = 0;
 	// RouterArrivalRate = Double.parseDouble(argv[1]);
 	RouterServiceRate = 1250;
 	SourceServiceRate = 1250;
 	SourceServiceTime = 1/SourceServiceRate;
-	NormalMean = Double.parseDouble(argv[1]);
-	NormalStandarDeviation = Double.parseDouble(argv[2]);
+	NormalMean = Double.parseDouble(argv[0]);
+	NormalStandarDeviation = Double.parseDouble(argv[1]);
 
 	MeanInterArrivalTime = 1.0/1125; MeanServiceTime = 1.0/RouterServiceRate;
 	SIGMA                = 0.6; TotalCustomers  = 300000;
-	long seed            = Long.parseLong(argv[0]);
+	//long seed            = Long.parseLong(argv[0]);
 
-	stream = new Random(seed);           // initialize rng stream
-	RouterDelayTime = 0.05;
-	SourceDelayTime = normal(stream, NormalMean, NormalStandarDeviation);
-	FutureEventList = new EventList();
-	HighQueue = new Queue();
-	LowQueue = new Queue();
-	packages = new ArrayList<Event>();
-	Customers = new Queue();
-	int dropped = 0;
-	count = 0;
-	Initialization();
+	long seedList[] = {1,10,100,1000,10000};
+	for (int k = 0; k<5; k++) {
+	    //long seed            = Long.parseLong(argv[0]);
+	    long seed = seedList[k];
+		stream = new Random(seed);           // initialize rng stream
+		
+		RouterDelayTime = 0.05;
+		SourceDelayTime = normal(stream, NormalMean, NormalStandarDeviation);
+		FutureEventList = new EventList();
+		HighQueue = new Queue();
+		LowQueue = new Queue();
+		packages = new ArrayList<Event>();
+		Customers = new Queue();
+		int dropped = 0;
+		count = 0;
+		Initialization();
 
-	// Loop until first "TotalCustomers" have departed
-	while(NumberOfDepartures < TotalCustomers ) {
-		Event evt = (Event)FutureEventList.getMin();  // get imminent event
-		FutureEventList.dequeue();                    // be rid of it
-		Clock = evt.get_time();                       // advance simulation time
-		if( evt.get_type() == arrival ) ProcessArrival(evt);
-		else  ProcessDeparture(evt);
-	}
-
-	System.out.println("size "+packages.size());
-	int currSequence = -1;
-	Collections.sort(packages);
-	int unOrderedCount = 0;
-
-	for(int i=0; i<packages.size(); i++){
-		// System.out.println("correct order is "+packages.get(i).get_order());
-		/*
-		if(i!=packages.get(i).get_order()){
-			unOrderedCount++;
-		}
-		*/
-		if(i==0){
-			currSequence = packages.get(i).get_order();
-			continue;
-		}
-		if(packages.get(i).get_order()>currSequence){
-			currSequence = packages.get(i).get_order();
-		} else{
-			unOrderedCount++;
-		}
-	}
-	
-	System.out.println("Before entering priority queue, out ot order rate is "+unOrderedCount/(double)TotalCustomers);
-	
-	System.out.println("");
-	System.out.println("");
-	System.out.println("");
-
-	Clock = packages.get(0).get_arrive_router_time();
-	LastEventTime = Clock;
-	count = 0;
-	NumberInService = 0;
-	currSequence = -1;
-	NumberOfDepartures = 0;
-	FutureEventList = new EventList();
-	Event e = new Event(arrival, packages.get(0).get_arrive_router_time(), count);
-	// HighQueue.enqueue(e);
-	FutureEventList.enqueue(e);
-	// enqueueCount++;
-	LowQueueLength = 0;
-	HighQueueLength = 0;
-	
-	int j = 0;
-	ArrayList<Event> arr = new ArrayList<Event>();
-	finalArrivals = new ArrayList<Event>();
-  
-  	// Start to process the arrivals and departures on router
-  	while(NumberOfDepartures < TotalCustomers ) {
-		// System.out.println("count "+count);
-		// System.out.println("departures "+NumberOfDepartures);
-		// System.out.println("enqueue count is "+enqueueCount);
-		// System.out.println("getmin count is "+getMinCount);
-		// System.out.println("");
-	    Event evt = (Event)FutureEventList.getMin();  // get imminent event
-		// getMinCount++;
-	    FutureEventList.dequeue();                    // be rid of it
-	    Clock = evt.get_time();                       // advance simulation time
-		// System.out.println("event is "+evt.get_type()+" "+evt.get_order());
-		// System.out.println("time is "+evt.get_time());
-		// System.out.println("");
-	
-		if(j==0){
-			currSequence = evt.get_order();
-			arr.add(evt);
-			ProcessRouterArrival(evt, 1);
-			j++;
-			continue;
+		// Loop until first "TotalCustomers" have departed
+		while(NumberOfDepartures < TotalCustomers ) {
+			Event evt = (Event)FutureEventList.getMin();  // get imminent event
+			FutureEventList.dequeue();                    // be rid of it
+			Clock = evt.get_time();                       // advance simulation time
+			if( evt.get_type() == arrival ) ProcessArrival(evt);
+			else  ProcessDeparture(evt);
 		}
 
-	    if( evt.get_type() == arrival ) {
-			arr.add(evt);
-			// System.out.println("order "+evt.get_order());
-			if(evt.get_order()>currSequence){
-				// System.out.println("cuurent sequence is "+currSequence);
-				// System.out.println("low");
-				if(LowQueueLength>=10000){
-					
-					dropped++;
-					j++;
-				    count++;
-					if(count<TotalCustomers){
-						Event next_arrival = new Event(arrival, packages.get(count).get_arrive_router_time(), packages.get(count).get_order());
-						FutureEventList.enqueue( next_arrival );
-						// enqueueCount++;
-						LastEventTime = Clock;
-					}
-					
-					continue;
-				}else{
-					currSequence = evt.get_order();
-					if(HighQueueLength==0&&LowQueueLength==0&&NumberInService==0){
-						ProcessRouterArrival(evt, 0);
-					}else{
-						LowQueue.enqueue(evt);
-		//				System.out.println("lowqueue added "+evt.get_order());
-		//				System.out.println("High order length "+HighQueueLength);
-		//				System.out.println("Low order length "+LowQueueLength);
-						LowQueueLength++;
-						ProcessRouterArrival(evt, 0);
-					}
-				}
-				
+		System.out.println("size "+packages.size());
+		int currSequence = -1;
+		Collections.sort(packages);
+		int unOrderedCount = 0;
+
+		for(int i=0; i<packages.size(); i++){
+			// System.out.println("correct order is "+packages.get(i).get_order());
+			/*
+			if(i!=packages.get(i).get_order()){
+				unOrderedCount++;
+			}
+			*/
+			if(i==0){
+				currSequence = packages.get(i).get_order();
+				continue;
+			}
+			if(packages.get(i).get_order()>currSequence){
+				currSequence = packages.get(i).get_order();
 			} else{
-		//		System.out.println("cuurent sequence is "+currSequence);
-		//		System.out.println("high");
-				if(HighQueueLength>=10000){
-					
-					dropped++;
-					j++;
-				    count++;
-					if(count<TotalCustomers){
-						Event next_arrival = new Event(arrival, packages.get(count).get_arrive_router_time(), packages.get(count).get_order());
-						FutureEventList.enqueue( next_arrival );
-				//		enqueueCount++;
-						LastEventTime = Clock;
-					}
-					
-					continue;
-				} else{
-					if(HighQueueLength==0&&LowQueueLength==0&&NumberInService==0){
-						ProcessRouterArrival(evt, 1);
+				unOrderedCount++;
+			}
+		}
+		
+		System.out.println("Before entering priority queue, out ot order rate is "+unOrderedCount/(double)TotalCustomers);
+		
+		System.out.println("");
+		System.out.println("");
+		System.out.println("");
+
+		Clock = packages.get(0).get_arrive_router_time();
+		LastEventTime = Clock;
+		count = 0;
+		NumberInService = 0;
+		currSequence = -1;
+		NumberOfDepartures = 0;
+		FutureEventList = new EventList();
+		Event e = new Event(arrival, packages.get(0).get_arrive_router_time(), count);
+		// HighQueue.enqueue(e);
+		FutureEventList.enqueue(e);
+		// enqueueCount++;
+		LowQueueLength = 0;
+		HighQueueLength = 0;
+		
+		int j = 0;
+		ArrayList<Event> arr = new ArrayList<Event>();
+		finalArrivals = new ArrayList<Event>();
+	  
+	  	// Start to process the arrivals and departures on router
+	  	while(NumberOfDepartures < TotalCustomers ) {
+			// System.out.println("count "+count);
+			// System.out.println("departures "+NumberOfDepartures);
+			// System.out.println("enqueue count is "+enqueueCount);
+			// System.out.println("getmin count is "+getMinCount);
+			// System.out.println("");
+		    Event evt = (Event)FutureEventList.getMin();  // get imminent event
+			// getMinCount++;
+		    FutureEventList.dequeue();                    // be rid of it
+		    Clock = evt.get_time();                       // advance simulation time
+			// System.out.println("event is "+evt.get_type()+" "+evt.get_order());
+			// System.out.println("time is "+evt.get_time());
+			// System.out.println("");
+		
+			if(j==0){
+				currSequence = evt.get_order();
+				arr.add(evt);
+				ProcessRouterArrival(evt, 1);
+				j++;
+				continue;
+			}
+
+		    if( evt.get_type() == arrival ) {
+				arr.add(evt);
+				// System.out.println("order "+evt.get_order());
+				if(evt.get_order()>currSequence){
+					// System.out.println("cuurent sequence is "+currSequence);
+					// System.out.println("low");
+					if(LowQueueLength>=10000){
+						
+						dropped++;
+						j++;
+					    count++;
+						if(count<TotalCustomers){
+							Event next_arrival = new Event(arrival, packages.get(count).get_arrive_router_time(), packages.get(count).get_order());
+							FutureEventList.enqueue( next_arrival );
+							// enqueueCount++;
+							LastEventTime = Clock;
+						}
+						
+						continue;
 					}else{
-						HighQueue.enqueue(evt);
-			//			System.out.println("HHHHHHHHHHHHHHHHHHighqueue added "+evt.get_order());
-		//				System.out.println("High order length "+HighQueueLength);
-		//				System.out.println("Low order length "+LowQueueLength);
-						HighQueueLength++;
-						ProcessRouterArrival(evt, 1);
+						currSequence = evt.get_order();
+						if(HighQueueLength==0&&LowQueueLength==0&&NumberInService==0){
+							ProcessRouterArrival(evt, 0);
+						}else{
+							LowQueue.enqueue(evt);
+			//				System.out.println("lowqueue added "+evt.get_order());
+			//				System.out.println("High order length "+HighQueueLength);
+			//				System.out.println("Low order length "+LowQueueLength);
+							LowQueueLength++;
+							ProcessRouterArrival(evt, 0);
+						}
 					}
 					
+				} else{
+			//		System.out.println("cuurent sequence is "+currSequence);
+			//		System.out.println("high");
+					if(HighQueueLength>=10000){
+						
+						dropped++;
+						j++;
+					    count++;
+						if(count<TotalCustomers){
+							Event next_arrival = new Event(arrival, packages.get(count).get_arrive_router_time(), packages.get(count).get_order());
+							FutureEventList.enqueue( next_arrival );
+					//		enqueueCount++;
+							LastEventTime = Clock;
+						}
+						
+						continue;
+					} else{
+						if(HighQueueLength==0&&LowQueueLength==0&&NumberInService==0){
+							ProcessRouterArrival(evt, 1);
+						}else{
+							HighQueue.enqueue(evt);
+				//			System.out.println("HHHHHHHHHHHHHHHHHHighqueue added "+evt.get_order());
+			//				System.out.println("High order length "+HighQueueLength);
+			//				System.out.println("Low order length "+LowQueueLength);
+							HighQueueLength++;
+							ProcessRouterArrival(evt, 1);
+						}
+						
+					}
 				}
+			}
+
+		    else  ProcessRouterDeparture(evt);
+			j++;
+	    }
+		
+		unOrderedCount = 0;
+		//Collections.sort(finalArrivals);
+
+		for(int i=0; i<finalArrivals.size(); i++){
+			// System.out.println("chenged order "+finalArrivals.get(i).get_order());
+			/*if(i!=finalArrivals.get(i).get_order()){
+				unOrderedCount++;
+			}
+			if(arr.get(i).get_order()!=packages.get(i).get_order()){
+				System.out.println("packages "+packages.get(i).get_order());
+				System.out.println("arrival "+packages.get(i).get_order());
+			}*/
+			
+			if(i==0){
+				currSequence = finalArrivals.get(i).get_order();
+				continue;
+			}
+			if(finalArrivals.get(i).get_order()>currSequence){
+				currSequence = finalArrivals.get(i).get_order();
+			} else{
+				unOrderedCount++;
 			}
 		}
 
-	    else  ProcessRouterDeparture(evt);
-		j++;
-    }
-	
-	unOrderedCount = 0;
-	//Collections.sort(finalArrivals);
+		System.out.println("the ratio of out of order packets is "+unOrderedCount/(double)TotalCustomers);
+		System.out.println("the average package delay is "+(TotalDelay/(double)TotalCustomers));
+		System.out.println("the ratio of dropped packets is "+(dropped/(double)TotalCustomers));
+		System.out.println("max queue length is "+MaxQueueLength);
 
-	for(int i=0; i<finalArrivals.size(); i++){
-		// System.out.println("chenged order "+finalArrivals.get(i).get_order());
-		/*if(i!=finalArrivals.get(i).get_order()){
-			unOrderedCount++;
-		}
-		if(arr.get(i).get_order()!=packages.get(i).get_order()){
-			System.out.println("packages "+packages.get(i).get_order());
-			System.out.println("arrival "+packages.get(i).get_order());
-		}*/
-		
-		if(i==0){
-			currSequence = finalArrivals.get(i).get_order();
-			continue;
-		}
-		if(finalArrivals.get(i).get_order()>currSequence){
-			currSequence = finalArrivals.get(i).get_order();
-		} else{
-			unOrderedCount++;
-		}
+
+		/********* newly added **********/
+    	double outoforderRate = unOrderedCount/(double)TotalCustomers;
+    	double packetDelay = TotalDelay/(double)TotalCustomers+0.05;
+    	double packetLoss = dropped/(double)TotalCustomers;
+
+    	outoforderRateList[k] = outoforderRate;
+    	packetDelayList[k] = packetDelay;
+    	packetLossList[k] = packetLoss;
+
+	  	ReportGeneration();
 	}
 
-	System.out.println("the ratio of out of order packets is "+unOrderedCount/(double)TotalCustomers);
-	System.out.println("the average package delay is "+(TotalDelay/(double)TotalCustomers));
-	System.out.println("the ratio of dropped packets is "+(dropped/(double)TotalCustomers));
-	System.out.println("max queue length is "+MaxQueueLength);
-  	ReportGeneration();
- }
+
+	double meanOutoforderRate = mean(outoforderRateList);
+    double HOutoforderRate = ese(outoforderRateList);
+    double CILowerOutoforderRate = meanOutoforderRate - HOutoforderRate;
+    double CIUpperOutoforderRate = meanOutoforderRate + HOutoforderRate;
+    
+    System.out.println("CI lower end: \t" + CILowerOutoforderRate);
+    System.out.println("mean: \t\t" + meanOutoforderRate);
+    System.out.println("CI upper end: \t" + CIUpperOutoforderRate);
+}
+
+
+
+public static double mean(double numArray[]) {
+	double sum = 0.0;
+	int length = numArray.length;
+
+	for(double num : numArray) {
+	  sum += num;
+	}
+
+	double mean = sum/length;
+	return mean;
+}
+
+// compute H = ese(sample mean)
+public static double ese(double numArray[]) {
+	double standardDeviation = 0.0;
+	int length = numArray.length;
+	double mean = mean(numArray);
+
+	for(double num: numArray) {
+	  standardDeviation += Math.pow(num - mean, 2);
+	}
+	standardDeviation = Math.sqrt(standardDeviation/(length-1));
+
+	// t = 2.57, R = 5
+	return (2.57 * standardDeviation / Math.sqrt(5));
+
+}
 
  // seed the event list with TotalCustomers arrivals
  public static void Initialization()   { 
