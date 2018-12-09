@@ -91,7 +91,7 @@ public static void main(String argv[]) {
 			}
 		}
 		
-		System.out.println("Before entering priority queue, out ot order rate is "+unOrderedCount/(double)TotalCustomers);
+		System.out.println("Before entering priority queue, out of order rate is "+unOrderedCount/(double)TotalCustomers);
 		
 		// System.out.println("");
 		// System.out.println("");
@@ -231,13 +231,12 @@ public static void main(String argv[]) {
 			}
 		}
 
-		System.out.println("the ratio of out of order packets is "+unOrderedCount/(double)TotalCustomers);
-		System.out.println("the average package delay is "+(TotalDelay/(double)TotalCustomers));
-		System.out.println("the ratio of dropped packets is "+(dropped/(double)TotalCustomers));
-		System.out.println("the # of dropped packets is "+ dropped);
-		System.out.println("max queue length is "+MaxQueueLength);
+		System.out.println("Packet out-of-order rate: \t"+unOrderedCount/(double)TotalCustomers);
+		System.out.println("Average package delay: \t\t"+(TotalDelay/(double)TotalCustomers));
+		System.out.println("Average packet loss rate: \t"+(dropped/(double)TotalCustomers));
+		System.out.println("Number of dropped packets: \t"+ dropped);
+		System.out.println("Max queue length: \t\t"+MaxQueueLength);
 
-		System.out.println("");
 		System.out.println("");
 
 
@@ -293,6 +292,7 @@ public static void main(String argv[]) {
     System.out.println("mean: \t\t" + meanPacketLoss);
     System.out.println("CI upper end: \t" + CIUpperPacketLoss);
     System.out.println("");
+	System.out.println("");
 	System.out.println("");
 
 }
