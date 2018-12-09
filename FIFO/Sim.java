@@ -20,135 +20,238 @@ public static int dropped;
 public static double totalWait = 0;
 public static int count;
 
+/******* newly added ******/
+public static double[] outoforderRateList = new double[5];
+public static double[] packetDelayList = new double[5];
+public static double[] packetLossList = new double[5];
+
+
 public static void main(String argv[]) {
-  TotalDelay = 0;
- // RouterArrivalRate = Double.parseDouble(argv[1]);
+  //TotalDelay = 0;
+  // RouterArrivalRate = Double.parseDouble(argv[1]);
   RouterServiceRate = 1250;
   SourceServiceRate = 1250;
   SourceServiceTime = 1/SourceServiceRate;
-  NormalMean = Double.parseDouble(argv[1]);
-  NormalStandarDeviation = Double.parseDouble(argv[2]);
+  NormalMean = Double.parseDouble(argv[0]);
+  NormalStandarDeviation = Double.parseDouble(argv[1]);
   
   MeanInterArrivalTime = 1.0/1125; MeanServiceTime = 1/RouterServiceRate;
   SIGMA                = 0.6; TotalCustomers  = 300000;
-  long seed            = Long.parseLong(argv[0]);
+  //long seed            = Long.parseLong(argv[0]);
 
-  stream = new Random(seed);           // initialize rng stream
-  RouterDelayTime = 0.05;
-  SourceDelayTime = normal(stream, NormalMean, NormalStandarDeviation);
-  FutureEventList = new EventList();
-  packages = new ArrayList<Event>();
-  Customers = new Queue();
-  count = 0;
-  Initialization();
-
-  // Loop until first "TotalCustomers" have departed
-  while(NumberOfDepartures < TotalCustomers ) {
-    Event evt = (Event)FutureEventList.getMin();  // get imminent event
-    FutureEventList.dequeue();                    // be rid of it
-    Clock = evt.get_time();                       // advance simulation time
-    if( evt.get_type() == arrival ) ProcessArrival(evt);
-    else  ProcessDeparture(evt);
-    }
-	System.out.println("size "+packages.size());
-
-	Collections.sort(packages);
-	int unOrderedCount = 0;
-	
-	int currSequence = -1;
-	
-	for(int i=0; i<packages.size(); i++){
-	//	System.out.println(packages.get(i).get_arrive_router_time());
-		if(i==0){
-			currSequence = packages.get(i).get_order();
-			continue;
-		}
-		if(packages.get(i).get_order()>currSequence){
-			currSequence = packages.get(i).get_order();
-		} else{
-			unOrderedCount++;
-		}
-	}
-//	System.out.println("maxqueuelength "+MaxQueueLength);
-//	System.out.println("the ratio of out of order packets is "+unOrderedCount/200000.0);
-//	System.out.println("the average package delay is "+(TotalDelay/200000.0+0.05));
-    Clock = packages.get(0).get_arrive_router_time();
-	System.out.println("Clock is : "+Clock);
-	LastEventTime = Clock;
-	count = 0;
-	NumberInService = 0;
-	currSequence = -1;
-	NumberOfDepartures = 0;
-	FutureEventList = new EventList();
-	Event e = new Event(arrival, packages.get(0).get_arrive_router_time(), count);
-//	HighQueue.enqueue(e);
-	FutureEventList.enqueue(e);
-	int j = 0;
-	ArrayList<Event> arr = new ArrayList<Event>();
-	finalArrivals = new ArrayList<Event>();
-	Customers = new Queue();
-	dropped = 0;
-	QueueLength = 0;
-	MaxQueueLength = 0;
-  // Start to process the arrivals and departures on router
-  while(NumberOfDepartures < TotalCustomers ) {
-	//System.out.println("");
-    Event evt = (Event)FutureEventList.getMin();  // get imminent event
-    FutureEventList.dequeue();                    // be rid of it
-    Clock = evt.get_time();                       // advance simulation time
+  long seedList[] = {1,10,100,1000,10000};
+  for (int k = 0; k<5; k++) {
+    TotalDelay = 0;
+    long seed = seedList[k];
+    stream = new Random(seed);           // initialize rng stream
     
-	if(j==0){
-		
-		ProcessRouterArrival(evt);
-		j++;
-		continue;
-	}
-    if( evt.get_type() == arrival ) {
-	//	System.out.println("Arrival at time: "+evt.get_time());
-		if(QueueLength>=10000){
-			dropped++;
-			count++;
-		  if(count<TotalCustomers){
-			  Event next_arrival = new Event(arrival, packages.get(count).get_arrive_router_time(), packages.get(count).get_order());
-			  FutureEventList.enqueue( next_arrival );
-			  
-			  LastEventTime = Clock; 
-		  }
-		}else{
-			ProcessRouterArrival(evt);
-		}
-		
-	}
-    else  {
-	//	System.out.println("Departure at time: "+evt.get_time());
-		ProcessRouterDeparture(evt);
-	}		
-	j++;
+    RouterDelayTime = 0.05;
+    SourceDelayTime = normal(stream, NormalMean, NormalStandarDeviation);
+    FutureEventList = new EventList();
+    packages = new ArrayList<Event>();
+    Customers = new Queue();
+    count = 0;
+    Initialization();
+
+    // Loop until first "TotalCustomers" have departed
+    while(NumberOfDepartures < TotalCustomers ) {
+      Event evt = (Event)FutureEventList.getMin();  // get imminent event
+      FutureEventList.dequeue();                    // be rid of it
+      Clock = evt.get_time();                       // advance simulation time
+      if( evt.get_type() == arrival ) ProcessArrival(evt);
+      else  ProcessDeparture(evt);
+    }
+  	System.out.println("size "+packages.size());
+
+  	Collections.sort(packages);
+  	int unOrderedCount = 0;
+  	
+  	int currSequence = -1;
+  	
+  	for(int i=0; i<packages.size(); i++){
+  		// System.out.println(packages.get(i).get_arrive_router_time());
+  		if(i==0){
+  			currSequence = packages.get(i).get_order();
+  			continue;
+  		}
+  		if(packages.get(i).get_order()>currSequence){
+  			currSequence = packages.get(i).get_order();
+  		} else{
+  			unOrderedCount++;
+  		}
+  	}
+  	// System.out.println("maxqueuelength "+MaxQueueLength);
+  	// System.out.println("the ratio of out of order packets is "+unOrderedCount/200000.0);
+  	// System.out.println("the average package delay is "+(TotalDelay/200000.0+0.05));
+
+
+    Clock = packages.get(0).get_arrive_router_time();
+  	System.out.println("Clock is : "+Clock);
+  	LastEventTime = Clock;
+  	count = 0;
+  	NumberInService = 0;
+  	currSequence = -1;
+  	NumberOfDepartures = 0;
+  	FutureEventList = new EventList();
+  	Event e = new Event(arrival, packages.get(0).get_arrive_router_time(), count);
+  	// HighQueue.enqueue(e);
+  	FutureEventList.enqueue(e);
+  	int j = 0;
+  	ArrayList<Event> arr = new ArrayList<Event>();
+  	finalArrivals = new ArrayList<Event>();
+  	Customers = new Queue();
+  	dropped = 0;
+  	QueueLength = 0;
+  	MaxQueueLength = 0;
+    
+
+    // Start to process the arrivals and departures on router
+    while(NumberOfDepartures < TotalCustomers ) {
+      // System.out.println("");
+      Event evt = (Event)FutureEventList.getMin();  // get imminent event
+      FutureEventList.dequeue();                    // be rid of it
+      Clock = evt.get_time();                       // advance simulation time
+      
+      if(j==0){
+        ProcessRouterArrival(evt);
+        j++;
+        continue;
+      }
+
+      if( evt.get_type() == arrival ) {
+  		  //System.out.println("Arrival at time: "+evt.get_time());
+    		if(QueueLength>=10000){
+    			dropped++;
+    			count++;
+    		  if(count<TotalCustomers){
+    			  Event next_arrival = new Event(arrival, packages.get(count).get_arrive_router_time(), packages.get(count).get_order());
+    			  FutureEventList.enqueue( next_arrival );
+    			  
+    			  LastEventTime = Clock; 
+    		  }
+    		}else{
+    			ProcessRouterArrival(evt);
+    		}
+      }
+      else  {
+    		// System.out.println("Departure at time: "+evt.get_time());
+    		ProcessRouterDeparture(evt);
+      }		
+
+      j++;
     }
 
-	unOrderedCount = 0;
-	//Collections.sort(finalArrivals);
+  	unOrderedCount = 0;
+  	//Collections.sort(finalArrivals);
 
-	for(int i=0; i<finalArrivals.size(); i++){
-		
-		if(i==0){
-			currSequence = finalArrivals.get(i).get_order();
-			continue;
-		}
-		if(finalArrivals.get(i).get_order()>currSequence){
-			currSequence = finalArrivals.get(i).get_order();
-		} else{
-			unOrderedCount++;
-		}
-	}
-	System.out.println("the ratio of out of order packets is "+unOrderedCount/(double)TotalCustomers);
-	System.out.println("the average package delay is "+(TotalDelay/(double)TotalCustomers));
-	System.out.println("the ratio of dropped packets is "+(dropped/(double)TotalCustomers));
-	System.out.println("max queue length is "+MaxQueueLength);
-	System.out.println("Avg wait time is "+totalWait/(double)TotalCustomers);
+  	for(int i=0; i<finalArrivals.size(); i++){
+  		
+  		if(i==0){
+  			currSequence = finalArrivals.get(i).get_order();
+  			continue;
+  		}
+  		if(finalArrivals.get(i).get_order()>currSequence){
+  			currSequence = finalArrivals.get(i).get_order();
+  		} else{
+  			unOrderedCount++;
+  		}
+  	}
 
-  ReportGeneration();
- }
+  	System.out.println("the ratio of out of order packets is "+unOrderedCount/(double)TotalCustomers);
+  	System.out.println("the average package delay is "+(TotalDelay/(double)TotalCustomers));
+  	System.out.println("the ratio of dropped packets is "+(dropped/(double)TotalCustomers));
+  	System.out.println("max queue length is "+MaxQueueLength);
+  	System.out.println("Avg wait time is "+totalWait/(double)TotalCustomers);
+
+    System.out.println("");
+    System.out.println("");
+
+
+    /********* newly added **********/
+    double outoforderRate = unOrderedCount/(double)TotalCustomers;
+    double packetDelay = TotalDelay/(double)TotalCustomers;
+    double packetLoss = dropped/(double)TotalCustomers;
+
+    outoforderRateList[k] = outoforderRate;
+    packetDelayList[k] = packetDelay;
+    packetLossList[k] = packetLoss;
+
+    ReportGeneration();
+  }
+
+
+  /* out of order rate */
+  System.out.println("Packet out of order rate: ");
+  double meanOutoforderRate = mean(outoforderRateList);
+  double HOutoforderRate = ese(outoforderRateList);
+  double CILowerOutoforderRate = meanOutoforderRate - HOutoforderRate;
+  double CIUpperOutoforderRate = meanOutoforderRate + HOutoforderRate;
+  
+  System.out.println("CI lower end: \t" + CILowerOutoforderRate);
+  System.out.println("mean: \t\t" + meanOutoforderRate);
+  System.out.println("CI upper end: \t" + CIUpperOutoforderRate);
+  System.out.println("");
+  System.out.println("");
+
+
+  /* avg packet delay */
+  System.out.println("Average packet delay: ");
+  double meanPacketDelay = mean(packetDelayList);
+  double HPacketDelay = ese(packetDelayList);
+  double CILowerPacketDelay = meanPacketDelay - HPacketDelay;
+  double CIUpperPacketDelay = meanPacketDelay + HPacketDelay;
+  
+  System.out.println("CI lower end: \t" + CILowerPacketDelay);
+  System.out.println("mean: \t\t" + meanPacketDelay);
+  System.out.println("CI upper end: \t" + CIUpperPacketDelay);
+  System.out.println("");
+  System.out.println("");
+
+
+  /* avg packet loss rate */
+  System.out.println("Average packet loss rate: ");
+  double meanPacketLoss = mean(packetLossList);
+  double HPacketLoss = ese(packetLossList);
+  double CILowerPacketLoss = meanPacketLoss - HPacketLoss;
+  double CIUpperPacketLoss = meanPacketLoss + HPacketLoss;
+  
+  System.out.println("CI lower end: \t" + CILowerPacketLoss);
+  System.out.println("mean: \t\t" + meanPacketLoss);
+  System.out.println("CI upper end: \t" + CIUpperPacketLoss);
+  System.out.println("");
+  System.out.println("");
+
+}
+
+
+public static double mean(double numArray[]) {
+  double sum = 0.0;
+  int length = numArray.length;
+
+  for(double num : numArray) {
+    sum += num;
+  }
+
+  double mean = sum/length;
+  return mean;
+}
+
+// compute H = ese(sample mean)
+public static double ese(double numArray[]) {
+  double standardDeviation = 0.0;
+  int length = numArray.length;
+  double mean = mean(numArray);
+
+  for(double num: numArray) {
+    standardDeviation += Math.pow(num - mean, 2);
+  }
+  standardDeviation = Math.sqrt(standardDeviation/(length-1));
+
+  // t = 2.57, R = 5
+  return (2.57 * standardDeviation / Math.sqrt(5));
+
+}
+
 
  // seed the event list with TotalCustomers arrivals
  public static void Initialization()   { 
