@@ -29,7 +29,7 @@ public static double[] packetLossList = new double[5];
 
 
 public static void main(String argv[]) {
-	TotalDelay = 0;
+	//TotalDelay = 0;
 	// RouterArrivalRate = Double.parseDouble(argv[1]);
 	RouterServiceRate = 1250;
 	SourceServiceRate = 1250;
@@ -43,6 +43,7 @@ public static void main(String argv[]) {
 
 	long seedList[] = {1,10,100,1000,10000};
 	for (int k = 0; k<5; k++) {
+		TotalDelay = 0;
 	    //long seed            = Long.parseLong(argv[0]);
 	    long seed = seedList[k];
 		stream = new Random(seed);           // initialize rng stream
@@ -92,9 +93,9 @@ public static void main(String argv[]) {
 		
 		System.out.println("Before entering priority queue, out ot order rate is "+unOrderedCount/(double)TotalCustomers);
 		
-		System.out.println("");
-		System.out.println("");
-		System.out.println("");
+		// System.out.println("");
+		// System.out.println("");
+		// System.out.println("");
 
 		Clock = packages.get(0).get_arrive_router_time();
 		LastEventTime = Clock;
@@ -233,12 +234,16 @@ public static void main(String argv[]) {
 		System.out.println("the ratio of out of order packets is "+unOrderedCount/(double)TotalCustomers);
 		System.out.println("the average package delay is "+(TotalDelay/(double)TotalCustomers));
 		System.out.println("the ratio of dropped packets is "+(dropped/(double)TotalCustomers));
+		System.out.println("the # of dropped packets is "+ dropped);
 		System.out.println("max queue length is "+MaxQueueLength);
+
+		System.out.println("");
+		System.out.println("");
 
 
 		/********* newly added **********/
     	double outoforderRate = unOrderedCount/(double)TotalCustomers;
-    	double packetDelay = TotalDelay/(double)TotalCustomers+0.05;
+    	double packetDelay = TotalDelay/(double)TotalCustomers;
     	double packetLoss = dropped/(double)TotalCustomers;
 
     	outoforderRateList[k] = outoforderRate;
@@ -249,6 +254,8 @@ public static void main(String argv[]) {
 	}
 
 
+	/* out of order rate */
+	System.out.println("Packet out of order rate: ");
 	double meanOutoforderRate = mean(outoforderRateList);
     double HOutoforderRate = ese(outoforderRateList);
     double CILowerOutoforderRate = meanOutoforderRate - HOutoforderRate;
@@ -257,6 +264,37 @@ public static void main(String argv[]) {
     System.out.println("CI lower end: \t" + CILowerOutoforderRate);
     System.out.println("mean: \t\t" + meanOutoforderRate);
     System.out.println("CI upper end: \t" + CIUpperOutoforderRate);
+    System.out.println("");
+	System.out.println("");
+
+
+	/* avg packet delay */
+	System.out.println("Average packet delay: ");
+	double meanPacketDelay = mean(packetDelayList);
+    double HPacketDelay = ese(packetDelayList);
+    double CILowerPacketDelay = meanPacketDelay - HPacketDelay;
+    double CIUpperPacketDelay = meanPacketDelay + HPacketDelay;
+    
+    System.out.println("CI lower end: \t" + CILowerPacketDelay);
+    System.out.println("mean: \t\t" + meanPacketDelay);
+    System.out.println("CI upper end: \t" + CIUpperPacketDelay);
+    System.out.println("");
+	System.out.println("");
+
+
+	/* avg packet loss rate */
+	System.out.println("Average packet loss rate: ");
+	double meanPacketLoss = mean(packetLossList);
+    double HPacketLoss = ese(packetLossList);
+    double CILowerPacketLoss = meanPacketLoss - HPacketLoss;
+    double CIUpperPacketLoss = meanPacketLoss + HPacketLoss;
+    
+    System.out.println("CI lower end: \t" + CILowerPacketLoss);
+    System.out.println("mean: \t\t" + meanPacketLoss);
+    System.out.println("CI upper end: \t" + CIUpperPacketLoss);
+    System.out.println("");
+	System.out.println("");
+
 }
 
 
