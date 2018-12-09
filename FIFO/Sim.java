@@ -191,7 +191,6 @@ public static void main(String argv[]) {
   System.out.println("mean: \t\t" + meanOutoforderRate);
   System.out.println("CI upper end: \t" + CIUpperOutoforderRate);
   System.out.println("");
-  System.out.println("");
 
 
   /* avg packet delay */
@@ -204,7 +203,6 @@ public static void main(String argv[]) {
   System.out.println("CI lower end: \t" + CILowerPacketDelay);
   System.out.println("mean: \t\t" + meanPacketDelay);
   System.out.println("CI upper end: \t" + CIUpperPacketDelay);
-  System.out.println("");
   System.out.println("");
 
 
