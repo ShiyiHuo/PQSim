@@ -26,7 +26,7 @@ public static int count;
 public static double[] outoforderRateList = new double[5];
 public static double[] packetDelayList = new double[5];
 public static double[] packetLossList = new double[5];
-
+public static double[] maxQueueLengthList = new double[5];
 
 public static void main(String argv[]) {
 	//TotalDelay = 0;
@@ -248,6 +248,7 @@ public static void main(String argv[]) {
     	outoforderRateList[k] = outoforderRate;
     	packetDelayList[k] = packetDelay;
     	packetLossList[k] = packetLoss;
+    	maxQueueLengthList[k] = MaxQueueLength;
 
 	  	ReportGeneration();
 	}
@@ -260,9 +261,8 @@ public static void main(String argv[]) {
     double CILowerOutoforderRate = meanOutoforderRate - HOutoforderRate;
     double CIUpperOutoforderRate = meanOutoforderRate + HOutoforderRate;
     
-    System.out.println("CI lower end: \t" + CILowerOutoforderRate);
     System.out.println("mean: \t\t" + meanOutoforderRate);
-    System.out.println("CI upper end: \t" + CIUpperOutoforderRate);
+    System.out.println("H: \t\t" + HOutoforderRate);
     System.out.println("");
 
 
@@ -273,9 +273,8 @@ public static void main(String argv[]) {
     double CILowerPacketDelay = meanPacketDelay - HPacketDelay;
     double CIUpperPacketDelay = meanPacketDelay + HPacketDelay;
     
-    System.out.println("CI lower end: \t" + CILowerPacketDelay);
     System.out.println("mean: \t\t" + meanPacketDelay);
-    System.out.println("CI upper end: \t" + CIUpperPacketDelay);
+    System.out.println("H: \t\t" + HPacketDelay);
     System.out.println("");
 
 
@@ -286,9 +285,20 @@ public static void main(String argv[]) {
     double CILowerPacketLoss = meanPacketLoss - HPacketLoss;
     double CIUpperPacketLoss = meanPacketLoss + HPacketLoss;
     
-    System.out.println("CI lower end: \t" + CILowerPacketLoss);
     System.out.println("mean: \t\t" + meanPacketLoss);
-    System.out.println("CI upper end: \t" + CIUpperPacketLoss);
+    System.out.println("H: \t\t" + HPacketLoss);
+	System.out.println("");
+
+
+    /* Max queue length */
+    System.out.println("Max queue length: ");
+	double meanMaxQueueLength = mean(maxQueueLengthList);
+    double HMaxQueueLength = ese(maxQueueLengthList);
+    
+    System.out.println("mean: \t\t" + meanMaxQueueLength);
+    System.out.println("H: \t\t" + HMaxQueueLength);
+
+
     System.out.println("");
 	System.out.println("");
 	System.out.println("");
